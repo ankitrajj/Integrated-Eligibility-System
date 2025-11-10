@@ -1,0 +1,8 @@
+package in.ankit.correspondence.service;
+
+import in.ankit.eligdet.bindings.CoResponse;
+
+public interface CoService {
+
+	public CoResponse processPendingTriggers() throws Exception;
+}

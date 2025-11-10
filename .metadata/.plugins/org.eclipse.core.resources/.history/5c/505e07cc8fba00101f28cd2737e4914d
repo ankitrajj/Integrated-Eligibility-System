@@ -1,0 +1,30 @@
+package in.ankit.benefit.services;
+
+
+import org.springframework.stereotype.Service;
+import java.time.LocalDate;
+import java.util.List;
+
+@Service
+public class BenefitServiceImpl {
+
+    private final BenefitRepository benefitRepository;
+
+    public BenefitService(BenefitRepository benefitRepository) {
+        this.benefitRepository = benefitRepository;
+    }
+
+    public BenefitIssuance issueBenefit(BenefitIssuance benefit) {
+        benefit.setIssueDate(LocalDate.now());
+        benefit.setStatus("ISSUED");
+        return benefitRepository.save(benefit);
+    }
+
+    public List<BenefitIssuance> getAllBenefits() {
+        return benefitRepository.findAll();
+    }
+
+    public List<BenefitIssuance> getBenefitsByUser(Long userId) {
+        return benefitRepository.findByUserId(userId);
+    }
+}

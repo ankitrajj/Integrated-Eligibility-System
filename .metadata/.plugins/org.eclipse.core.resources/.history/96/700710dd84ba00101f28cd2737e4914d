@@ -1,0 +1,5 @@
+package in.ankit.appreg.exception;
+
+public class AppExecption {
+
+}

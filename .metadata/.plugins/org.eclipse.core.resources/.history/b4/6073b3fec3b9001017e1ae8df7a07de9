@@ -1,0 +1,32 @@
+package in.ankit.runner;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+
+import in.ankit.admin.entity.UserEntity;
+import in.ankit.repo.UserRepo;
+
+@Component
+public class LoadAdminsAndRole implements ApplicationRunner {
+	    @Autowired
+		private UserRepo userRepo;
+	    
+
+	@Override
+	public void run(ApplicationArguments args) throws Exception {
+   
+      	userRepo.deleteAll();
+      	UserEntity admin = new UserEntity();
+        admin.setFullName("admin1");
+        admin.setUserDob("25-08-1990");
+        admin.setUserEmail("admin1@gamil.com");
+        admin.setUserPhno(123456L);
+        admin.setUserGender("M");
+        admin.setUserRole("Admin"); 
+        userRepo.save(admin);        	
+          	
+	}
+
+}

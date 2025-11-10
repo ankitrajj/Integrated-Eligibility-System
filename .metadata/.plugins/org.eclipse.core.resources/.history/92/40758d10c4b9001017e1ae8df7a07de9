@@ -1,0 +1,96 @@
+package in.ankit.services;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import in.ankit.admin.binding.UnlockForm;
+import in.ankit.admin.binding.UserForm;
+import in.ankit.admin.entity.UserEntity;
+import in.ankit.admin.repo.UserRepo;
+import in.ankit.utils.EmailUtils;
+import in.ankit.utils.PwdUtils;
+
+@Service
+public class UserServicesImpl implements UserServices{
+    @Autowired
+	private UserRepo userRepo;
+    
+    @Autowired
+    private EmailUtils emailSender;
+    
+	@Override
+	public boolean createUser(UserForm form) {
+		
+		UserEntity user = new UserEntity();
+		BeanUtils.copyProperties(form, user);
+		
+		String randomPwd = PwdUtils.generateRandomPwd();
+		
+		user.setUserPwd(randomPwd);		
+		user.setAccStatus("LOCKED");
+		user.setActive_Switch("N");
+		user.setUserRole("Admin");
+		userRepo.save(user);
+		
+		String toEmail = form.getUserEmail();
+		String subject = "Unlock your account";
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("<h5>Welcome to fornk deak!! Unlock your account with the below link and given password </h5>");
+		sb.append("Generated Password: "+ randomPwd + "<br>");
+		sb.append("<a href=\"http://localhost:8081/unlock?email="+ toEmail +"\">Click here to unlock your account!!</a>");			
+		boolean mailStatus = emailSender.sendEmail(toEmail, subject, sb.toString());
+		return mailStatus;
+	}
+
+	@Override
+	public List<UserForm> fetchUser() {
+		List<UserEntity> userentities = userRepo.findAll();
+	    
+		/* Convert UserEntity list to UserForm list*/
+		List<UserForm> users = new ArrayList<>();
+		for(UserEntity userEntity:userentities) {
+			UserForm user = new UserForm();
+			BeanUtils.copyProperties(userEntity, user);
+			users.add(user);
+		}
+		return users;
+	}
+
+	@Override
+	public UserForm getUserAccById(Integer accId) {
+		Optional<UserEntity> optional = userRepo.findById(accId);
+		if(optional.isPresent()) {
+			UserEntity userEntity = optional.get();
+			UserForm user = new UserForm();
+			BeanUtils.copyProperties(userEntity, user);
+			return user;
+		}
+		return null;
+	}
+
+	@Override
+	public String changeAccStatus(Integer userId, String status) {
+		Integer count = userRepo.updateAccStatus(userId, status);
+		if(count>0) {
+			return "Status Changed";
+		}else {
+			return "Failed to Change";
+		}	
+	}
+
+	@Override
+	public String unlockUser(UnlockForm form) {
+		UserEntity userEntity = userRepo.findByUserEmail(form.getEmail());
+		userEntity.setUserPwd(form.getNewPwd());
+		userEntity.setAccStatus("UNLOCKED");
+		userRepo.save(userEntity);
+		return "Account Unlcoked";
+	}
+
+}

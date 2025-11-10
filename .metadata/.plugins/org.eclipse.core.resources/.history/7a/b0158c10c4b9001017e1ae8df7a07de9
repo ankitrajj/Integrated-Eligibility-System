@@ -1,0 +1,17 @@
+package in.ankit.services;
+
+import in.ankit.admin.binding.DashboardCard;
+import in.ankit.admin.binding.LogInForm;
+import in.ankit.admin.binding.UserForm;
+
+public interface WorkerService {
+   
+	public String logIn(LogInForm form);
+
+	public String recoverPwd(String email);
+
+	public DashboardCard fetchDashboardInfo();
+	
+	public UserForm getUserByEmail(String email);
+	
+}

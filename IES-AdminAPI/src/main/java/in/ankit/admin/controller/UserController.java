@@ -1,0 +1,69 @@
+package in.ankit.admin.controller;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import in.ankit.admin.binding.UserForm;
+import in.ankit.admin.services.UserServices;
+
+@RestController
+public class UserController {
+	
+	private Logger logger = LoggerFactory.getLogger(UserController.class);
+	
+	@Autowired
+	private UserServices userService;
+     
+	@PostMapping("/user")
+	public ResponseEntity<String> createAccount(@RequestBody UserForm form) {
+	
+		logger.debug("Account creation process started....");		
+		boolean status = userService.createUser(form);
+		logger.debug("Account creation process ended....");
+		if(status) {
+			logger.info("Account created successfully...");
+			return new ResponseEntity<>("Account Created!!",HttpStatus.CREATED); //201
+		}else {
+			logger.info("Account created failed...");
+			return new ResponseEntity<>("Account Creation Failed!!",HttpStatus.INTERNAL_SERVER_ERROR); //500
+		}	
+	}
+	
+	@GetMapping("/users")
+	public ResponseEntity<List<UserForm>> getUsers() {
+		 logger.debug("Users fetching process started....");
+		 List<UserForm> users = userService.fetchUser();
+		 logger.debug("Users fetching process ended....");
+		 logger.info("Users fetched successfully...");
+		 return new ResponseEntity<>(users,HttpStatus.OK);
+	}
+	
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<UserForm> getUser(@PathVariable("userId") Integer userId) {
+		 UserForm user = userService.getUserAccById(userId);
+		 logger.info("User account fetched successfully...");
+		 return new ResponseEntity<>(user,HttpStatus.OK);
+	}
+	
+	@PutMapping("/user/{userId}/{status}")
+	public ResponseEntity<List<UserForm>> updateUser(@PathVariable("userId") Integer userId, @PathVariable("status") String status) {
+		logger.debug("Users updating process started....");
+		userService.changeAccStatus(userId, status);
+		logger.debug("Users updating process ended....");
+		logger.info("User account updated successfully...");
+		List<UserForm> users = userService.fetchUser();
+		return new ResponseEntity<>(users,HttpStatus.OK);
+	}
+	
+}

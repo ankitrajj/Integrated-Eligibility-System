@@ -1,0 +1,64 @@
+package in.ankit.services;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import in.ankit.admin.binding.PlanForm;
+import in.ankit.admin.entity.PlansEntity;
+import in.ankit.admin.repo.PlansRepo;
+
+@Service
+public class PlanServicesImpl implements PlanServices {
+    
+	@Autowired
+	private PlansRepo plansRepo;
+	
+	@Override
+	public boolean createPlan(PlanForm planform) {
+		PlansEntity plans = new PlansEntity();
+		BeanUtils.copyProperties(planform, plans);
+		plans.setActive_switch("N");
+		plansRepo.save(plans);
+		return true;
+	}
+
+	@Override
+	public List<PlanForm> fetchPlan() {
+		List<PlansEntity> plansEntity = plansRepo.findAll();
+		List<PlanForm> plans = new ArrayList<>();
+		for(PlansEntity plan: plansEntity) {
+			PlanForm planForm = new PlanForm();
+			BeanUtils.copyProperties(plan, planForm);
+			plans.add(planForm);
+		}
+		return plans;
+	}
+
+	@Override
+	public PlanForm getPlanById(Integer planId) {
+		Optional<PlansEntity> optional = plansRepo.findById(planId);
+		if(optional.isPresent()) {
+			PlansEntity plansEntity = optional.get();
+			PlanForm plan = new PlanForm();
+			BeanUtils.copyProperties(plansEntity, plan);
+			return plan;
+		}
+		return null;
+	}
+
+	@Override
+	public String changePlanStatus(Integer planId, String status) {
+		Integer count = plansRepo.updatePlanStatus(planId, status);
+		if(count>0) {
+			return "Plan Status Changed";
+		}else {
+			return "Failed to Change";
+		}	
+	}
+
+}

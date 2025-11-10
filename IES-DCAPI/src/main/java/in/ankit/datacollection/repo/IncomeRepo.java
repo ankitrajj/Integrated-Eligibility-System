@@ -1,0 +1,9 @@
+package in.ankit.datacollection.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import in.ankit.datacollection.entities.IncomeEntity;
+
+public interface IncomeRepo extends JpaRepository<IncomeEntity, Integer> {
+
+}

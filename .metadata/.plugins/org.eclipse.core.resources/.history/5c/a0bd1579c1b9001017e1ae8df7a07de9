@@ -1,0 +1,111 @@
+package in.ankit.services;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import in.ankit.binding.DashboardCard;
+import in.ankit.binding.LogInForm;
+import in.ankit.binding.UserForm;
+import in.ankit.entity.EligEntity;
+import in.ankit.entity.UserEntity;
+
+import in.ankit.repo.PlansRepo;
+import in.ankit.repo.UserRepo;
+import in.ankit.utils.EmailUtils;
+
+@Service
+public class WorkerServiceImpl implements WorkerService {
+    
+	@Autowired
+	private UserRepo userRepo;
+	
+	@Autowired
+	private PlansRepo plansRepo;
+	
+	@Autowired
+    private EmailUtils emailSender;
+
+	@Override
+	public String logIn(LogInForm form) {
+	  UserEntity userEntity = userRepo.findByUserEmailAndUserPwd(form.getEmail(), form.getPassword());
+	  if(userEntity==null) {
+			return "Invalid Credentials!!";
+		}
+	  
+	  /* We can't use "Http session" for microservice application.*/
+	  
+	  if("UNLOCKED".equals(userEntity.getAccStatus())&& "Y".equals(userEntity.getActive_Switch())) {
+		  return "success";		                                         
+		}else {
+			return "Account Locked/In-Active!!";
+		}   
+	}
+
+	@Override
+	public String recoverPwd(String email) {
+		UserEntity userEntity = userRepo.findByUserEmail(email);
+		if(null==userEntity) {
+			return "Email not registered!!";
+		}else {
+		String subject = "Recover your password!!";
+	//	String body =  "Your Password: "+userEntity.getUserPwd();
+		String body = readEmailBody("Forgot_pwd_mail_body.txt",userEntity);
+		boolean sendEmail = emailSender.sendEmail(email, subject, body);
+		
+		if(sendEmail) {
+		return "Password sent to your email!!";
+		}else {
+			return "";
+		}
+	  }
+	}
+	
+	private String readEmailBody(String filename, UserEntity userEntity) {
+		StringBuilder sb = new StringBuilder();
+		
+		try(Stream<String> lines = Files.lines(Paths.get(filename))){
+			lines.forEach(line->{
+			       line = line.replace("${FNAME}", userEntity.getFullName());
+			       line = line.replace("${PWD}", userEntity.getUserPwd());
+			       sb.append(line);
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
+		return sb.toString();
+	}
+
+	@Override
+	public DashboardCard fetchDashboardInfo() {
+		long planCount = plansRepo.count();
+		
+		List<EligEntity> eligList = eligRepo.findAll();	
+		long approvedCnt = eligList.stream().filter(ed->ed.getPlanStatus().equals("Approved")).count();
+		long deniedCnt = eligList.stream().filter(ed->ed.getPlanStatus().equals("Denied")).count();
+		Double benefitAmt = eligList.stream().mapToDouble(ed-> ed.getBenefitAmt()).sum();
+		
+		DashboardCard card = new DashboardCard();
+		card.setPlansCnt(planCount);
+		card.setApprovedCnt(approvedCnt);
+		card.setDeniedCnt(deniedCnt);
+		card.setBenefitAmt(benefitAmt);
+		return card;
+	}
+
+	
+	@Override
+	public UserForm getUserByEmail(String email) {
+		UserEntity userEntity = userRepo.findByUserEmail(email);	
+		UserForm user = new UserForm();
+		BeanUtils.copyProperties(userEntity, user);
+		return user;
+	}
+
+}

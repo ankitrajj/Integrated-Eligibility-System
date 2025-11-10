@@ -1,0 +1,9 @@
+package in.ankit.eligdet.services;
+
+import in.ankit.eligdet.bindings.EdResponse;
+
+public interface EdServices {
+
+	public EdResponse determineEligibility(Long caseNum);
+	public boolean generateCo(Long caseNum);
+}

@@ -1,0 +1,82 @@
+package in.ankit.services;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import in.ankit.appreg.bindings.AppForm;
+import in.ankit.entities.AppEntity;
+import in.ankit.entities.UserEntity;
+import in.ankit.exception.SsaWebException;
+import in.ankit.repos.AppRepo;
+import in.ankit.repos.UserRepo;
+
+@Service
+public class ArServiceImpl implements ArService {
+	
+	@Autowired
+	private AppRepo appRepo;
+	
+	@Autowired
+	private UserRepo userRepo;
+	
+	private static final String SSA_WEB_API_URL ="https://ssa.web.app/{ssn}";
+
+	@Override
+	public String createApplication(AppForm appForm) {
+		try {
+			WebClient webClient = WebClient.create();
+			String stateName = webClient.get()
+			         .uri(SSA_WEB_API_URL,appForm.getSsn())
+			         .retrieve()
+			         .bodyToMono(String.class)
+			         .block();
+			
+			if("RI".equals(stateName)) {
+				UserEntity userEntity = userRepo.findById(appForm.getUserId()).get();
+				
+				AppEntity appEntity = new AppEntity();
+				BeanUtils.copyProperties(appForm, appEntity);
+				
+				appEntity.setUser(userEntity);
+				
+				appEntity = appRepo.save(appEntity);
+				return "Application created with case number: "+appEntity.getCaseNum();			
+			}
+			
+		}
+		catch(Exception e) {	
+			throw new SsaWebException(e.getMessage());
+		}
+		return "Invalid SSN!!";
+	}
+
+	
+	
+	@Override
+	public List<AppForm> fetchApps(Integer userId) {
+		
+		UserEntity userEntity = userRepo.findById(userId).get();	
+		String userRole = userEntity.getUserRole();
+		
+		List<AppEntity> appEntities = null;		
+		if(userRole.equals("Admin")) {
+			appEntities = appRepo.findAll();		
+		}else {
+			appEntities = appRepo.fetchCWApps(userId);
+		}
+		
+		List<AppForm> apps = new ArrayList<>();
+		
+		for(AppEntity entity: appEntities) {
+			AppForm appForm = new AppForm();
+			BeanUtils.copyProperties(entity, appForm);
+			apps.add(appForm);
+		}	
+		return apps;
+	}
+}

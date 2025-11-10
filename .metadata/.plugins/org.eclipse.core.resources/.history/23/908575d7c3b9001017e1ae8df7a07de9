@@ -1,0 +1,42 @@
+package in.ankit.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import in.ankit.admin.binding.DashboardCard;
+import in.ankit.admin.binding.LogInForm;
+import in.ankit.admin.binding.UserForm;
+import in.ankit.services.WorkerService;
+
+@RestController
+public class WorkerController {
+	
+	@Autowired
+	private WorkerService workerService;
+	
+	
+	@PostMapping("/login")
+	public String login(@RequestBody LogInForm loginform){
+		String status = workerService.logIn(loginform);	
+		if(status.equals("success")) {
+			return "redirect:/dashboard?email="+loginform.getEmail();
+		}else {
+		return status;
+	  }
+   }
+	
+	@GetMapping("/dashboard")
+	public ResponseEntity<DashboardCard> buildDashboard(@RequestParam("email") String email){
+		UserForm user = workerService.getUserByEmail(email);
+		DashboardCard dashboard = workerService.fetchDashboardInfo();
+		dashboard.setUser(user);
+		return new ResponseEntity<>(dashboard, HttpStatus.OK);
+	
+	}
+}

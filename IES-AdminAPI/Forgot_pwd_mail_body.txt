@@ -1,0 +1,7 @@
+Hi ${FNAME}, <br> <br>
+Welcome to IES!!<br>
+Your password is provided below.<br>
+Your Passwprd : ${PWD}<br>
+<br>
+Thanks,<br>
+RI.<br>

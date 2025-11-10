@@ -1,0 +1,118 @@
+package in.ankit.correspondence.service;
+
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.amazonaws.services.s3.AmazonS3;
+
+import in.ankit.correspondence.entity.EligEntity;
+import in.ankit.correspondence.entity.AppEntity;
+import in.ankit.correspondence.entity.CoNoticeEntity;
+import in.ankit.correspondence.repo.CoNoticeRepo;
+import in.ankit.correspondence.repo.EligRepo;
+import in.ankit.correspondence.utils.EmailUtils;
+import in.ankit.eligdet.bindings.CoResponse;
+
+@Service
+public class CoServiceImpl implements CoService {
+    
+	@Autowired
+	private CoNoticeRepo noticeRepo;
+	
+	@Autowired
+	private EligRepo eligRepo;
+	
+	@Autowired
+	private EmailUtils emailUtils;
+	
+	@Autowired
+	private AmazonS3 s3;
+	
+	@Override
+	public CoResponse processPendingTriggers() throws Exception {
+		CoResponse response = new CoResponse();
+		// Get all pending records from CoNotice table
+		List<CoNoticeEntity> records = noticeRepo.findByNoticeStatus("PENDING");	
+	
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		
+		for(CoNoticeEntity entity : records) {
+			executorService.submit(new Runnable() {
+				@Override
+				public void run() {			
+					try {
+						processEachRecord(entity);
+					}catch(Exception e) {
+						e.printStackTrace();
+					}
+				}		
+			});		
+		}
+		return response;
+	}
+	
+	private AppEntity processEachRecord(CoNoticeEntity entity) throws Exception{				
+		
+		// Get eligibility data based on case number
+		
+		EligEntity eligEntity = eligRepo.findByCaseNum(entity.getCaseNum());
+		
+		String planStatus = eligEntity.getPlanStatus();
+		
+		File file = null;
+		if("APPROVED".equals(planStatus)) {
+			file = generateApprovedNotice(eligEntity);
+		}else if("DENIED".equals(planStatus)) {
+			file = generateDeniedNotice(eligEntity);
+		}
+		
+			
+		String fileUrl = storePdfInS3(file);
+		
+		updateProcessRecord(entity, fileUrl);
+		
+		emailUtils.sendEmail("","","", file);
+		
+		return null;
+	}
+	
+	private void updateProcessRecord(CoNoticeEntity entity, String fileUrl) {
+		
+		entity.setNoticeStatus("COMPLETED");
+		entity.setNoticeUrl(fileUrl);
+		
+		noticeRepo.save(entity);
+
+	}
+	
+
+	private String storePdfInS3(File file) {
+		
+       s3.putObject("bucketName", file.getName(), file);
+       URL url = s3.getUrl("bucketName", file.getName());  
+       return url.toExternalForm();		
+	}
+
+	private File generateApprovedNotice(EligEntity eligEntity) {
+		
+		// TODO : Generate approved pdf
+		
+		return null;
+	}
+
+	private File generateDeniedNotice(EligEntity eligEntity) {
+		
+		// TODO : Generate Denied pdf
+	
+		return null;
+	}
+
+	
+
+}

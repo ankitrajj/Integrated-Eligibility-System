@@ -1,0 +1,16 @@
+package in.ankit.appreg.repos;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import in.ankit.appreg.entities.AppEntity;
+
+@Repository
+public interface AppRepo extends JpaRepository<AppEntity, Long> {
+
+	@Query("SELECT a FROM AppEntity a WHERE a.user.userId = :userId")
+	public List<AppEntity> fetchCWApps(Integer userId);
+}

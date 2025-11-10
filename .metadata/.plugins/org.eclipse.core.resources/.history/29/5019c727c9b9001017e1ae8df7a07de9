@@ -1,0 +1,98 @@
+package in.ankit.eligdet.services;
+
+import java.time.LocalDate;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
+import in.ankit.eligdet.bindings.EdResponse;
+import in.ankit.eligdet.entities.EligEntity;
+import in.ankit.eligdet.entities.IncomeEntity;
+import in.ankit.eligdet.entities.PlanSelEntity;
+import in.ankit.eligdet.entities.PlansEntity;
+import in.ankit.eligdet.repo.EducationRepo;
+import in.ankit.eligdet.repo.EligRepo;
+import in.ankit.eligdet.repo.IncomeRepo;
+import in.ankit.eligdet.repo.KidRepo;
+import in.ankit.eligdet.repo.PlanSelRepo;
+import in.ankit.eligdet.repo.PlansRepo;
+
+public class EdServiceImpl implements EdServices {
+	
+	@Autowired
+	private PlansRepo planRepo;  
+	
+	@Autowired
+	private PlanSelRepo planSelRepo; 
+	
+	@Autowired
+	private EducationRepo educationRepo;  
+	
+	@Autowired
+	private IncomeRepo incomeRepo;
+
+	@Autowired
+	private KidRepo kidRepo;
+	
+	@Autowired
+	private EligRepo eligRepo;
+
+	@Override
+	public EdResponse determineEligibility(Long caseNum) {
+	
+		// Get citizen plan name using case number.
+		PlanSelEntity planSel = planSelRepo.findByCaseNum(caseNum);
+		Integer planId = planSel.getPlanId();		
+		in.ankit.admin.entity.PlansEntity plansEntity = planRepo.findById(planId).get();
+		String planName = planEntity.getPlanName();
+		
+		// Get citizen info using caseNUm
+		IncomeEntity incomeEntity = incomeRepo.findByCaseNum(caseNum);	
+		educationRepo.findByCaseNum(caseNum);
+		kidRepo.findByCaseNum(caseNum);
+		
+		EdResponse response = new EdResponse();
+		response.setPlanName(planName);
+		response.setCaseNum(caseNum);
+		
+		if("SNAP".equals(planName)) {
+			Double salaryIncome = incomeEntity.getSalaryIncome();
+			if(salaryIncome > 300) {
+				response.setPlanStatus("DENIED");
+				response.setDenialRsn("High Salary Income");
+			}else {
+				response.setPlanStatus("APPROVED");
+				response.setBenefitAmt(350.0);
+				response.setEligStartDate(LocalDate.now());
+				response.setEligEndDate(LocalDate.now().plusMonths(6));
+			}
+		}else if("CCAP".equals(planName)) {
+			//logic
+		}else if("Medicaid".equals(planName)) {
+			//logic
+		}else if("Medicare".equals(planName)){
+			//logic
+		}else if("RIW".equals(planName)) {
+			//logic
+		}else {
+			//logic
+		}	
+		
+		EligEntity entity = new EligEntity();
+		BeanUtils.copyProperties(response, entity);
+		eligRepo.save(entity);
+		return response;
+	}
+
+	@Override
+	public boolean generateCo(Long caseNum) {
+
+		// Get ED record based on case number
+		
+		// Insert into CO table
+		
+		return false;
+	}
+
+}

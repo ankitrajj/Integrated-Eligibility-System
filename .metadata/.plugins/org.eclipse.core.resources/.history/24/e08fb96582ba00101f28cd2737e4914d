@@ -1,0 +1,16 @@
+package in.ankit.correspondence.entity;
+
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
+
+
+@Getter
+@Setter
+@Entity
+public class CoNoticeEntity {
+
+	private String noticeStatus;  // Pending or Sent
+	private Long caseNum;
+	private String noticeUrl;
+}

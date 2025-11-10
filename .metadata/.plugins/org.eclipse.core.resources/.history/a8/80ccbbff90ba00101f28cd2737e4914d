@@ -1,0 +1,39 @@
+package in.ankit.benefit.controllers;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import in.ankit.benefit.entities.BenefitIssuance;
+import in.ankit.benefit.services.BenefitService;
+
+@RestController
+@RequestMapping("/api/benefits")
+public class BenefitController {
+     
+	@Autowired
+    private BenefitService benefitService;
+
+    @PostMapping("/issue")
+    public ResponseEntity<BenefitIssuance> issueBenefit(@RequestBody BenefitIssuance benefit) {
+        return ResponseEntity.ok(benefitService.issueBenefit(benefit));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BenefitIssuance>> getAllBenefits() {
+        return ResponseEntity.ok(benefitService.getAllBenefits());
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<BenefitIssuance>> getBenefitsByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(benefitService.getBenefitsByUser(userId));
+    }
+}
+
